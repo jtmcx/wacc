@@ -2,6 +2,7 @@
 open Sexplib.Std
 
 type token = 
+  | EOF
   | RPAREN
   | LPAREN
   | RBRACE
@@ -12,7 +13,6 @@ type token =
   | RETURN
   | IDENT of string
   | LITINT of string
-  | EOF
   [@@deriving eq, show, sexp]
 
 type error =

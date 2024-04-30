@@ -3,8 +3,12 @@
  (public_name wacc)
  (libraries unix str sexplib)
  (preprocess (pps ppx_deriving.show ppx_deriving.eq ppx_sexp_conv))
- (modules Lexer Loc))
+ (modules Ast Lexer Loc Parser))
 
 (ocamllex Lexer)
+
+(menhir
+ (flags (--external-tokens Lexer))
+ (modules Parser))
 
 (documentation)
