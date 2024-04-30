@@ -7,12 +7,15 @@ authors: ["jtm"]
 license: "ISC"
 homepage: "https://github.com/jtmcx/wacc"
 doc: "https://github.com/jtmcx/wacc"
+bug-reports: "https://github.com/jtmcx/wacc/issues"
 depends: [
   "ocaml"
   "dune" {>= "3.7"}
   "menhir"
+  "odoc"
   "ppx_deriving"
-  "odoc" {with-doc}
+  "ppx_sexp_conv"
+  "sexplib"
 ]
 build: [
   ["dune" "subst"] {dev}
@@ -28,4 +31,4 @@ build: [
     "@doc" {with-doc}
   ]
 ]
-dev-repo: "https://github.com/jtmcx/wacc"
+dev-repo: "git+https://github.com/jtmcx/wacc"

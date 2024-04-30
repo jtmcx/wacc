@@ -1,3 +1,4 @@
 (executable
  (public_name wacc)
- (name Main))
+ (name Main)
+ (libraries wacc))

@@ -6,7 +6,8 @@
 (maintainers "jtm")
 (license ISC)
 (homepage "https://github.com/jtmcx/wacc")
-(source (uri "https://github.com/jtmcx/wacc"))
+(source (uri "git+https://github.com/jtmcx/wacc"))
+(bug_reports "https://github.com/jtmcx/wacc/issues")
 (documentation "https://github.com/jtmcx/wacc")
 
 (package
@@ -17,6 +18,9 @@
    ocaml
    dune
    menhir
-   ppx_deriving))
+   odoc
+   ppx_deriving
+   ppx_sexp_conv
+   sexplib))
 
 (generate_opam_files true)
