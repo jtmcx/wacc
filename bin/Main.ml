@@ -38,6 +38,11 @@ let dump_ast file =
   Sexp.pp_hum Format.std_formatter (Ast.sexp_of_program prog);
   Format.print_newline ()
 
+let dump_codegen file =
+  let f = open_in file in
+  let lexbuf = Lexing.from_channel f in
+  let prog = Wacc.Parser.program Wacc.Lexer.lex lexbuf in
+  Wacc.Emit.emit stdout (Wacc.Codegen.codegen prog)
 
 let () =
   Arg.parse argspec arganon usage;
@@ -47,4 +52,5 @@ let () =
     exit 1
   end;
   if !arg_lex then dump_tokens !arg_input else
-  if !arg_parse then dump_ast !arg_input else ()
+  if !arg_parse then dump_ast !arg_input else 
+  dump_codegen !arg_input
