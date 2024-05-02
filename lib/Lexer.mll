@@ -8,6 +8,9 @@ type token =
   | RBRACE
   | LBRACE
   | SEMICOLON
+  | MINUS
+  | MINUSMINUS
+  | TILDE
   | INT
   | VOID
   | RETURN
@@ -40,6 +43,9 @@ rule lex = parse
   | '{'                     { LBRACE }
   | '}'                     { RBRACE }
   | ';'                     { SEMICOLON }
+  | "--"                    { MINUSMINUS }
+  | '-'                     { MINUS }
+  | '~'                     { TILDE }
   | "int"                   { INT }
   | "void"                  { VOID }
   | "return"                { RETURN }

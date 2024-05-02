@@ -10,7 +10,6 @@ type span = {
   span_end : t;
 }
 
-
 (** {1 String Conversions} *)
 
 val show : t -> string

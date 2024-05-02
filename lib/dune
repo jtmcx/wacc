@@ -3,7 +3,7 @@
  (public_name wacc)
  (libraries unix str sexplib)
  (preprocess (pps ppx_deriving.show ppx_deriving.eq ppx_sexp_conv))
- (modules Asm Ast Codegen Emit Lexer Loc Parser))
+ (modules Asm AsmGen AsmPrint Ast Lexer Loc Parser Tacky TackyGen))
 
 (ocamllex Lexer)
 

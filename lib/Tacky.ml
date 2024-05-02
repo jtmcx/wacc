@@ -1,27 +1,22 @@
 open Sexplib.Std
 
-type reg =
-  | AX
-  | R10
-  [@@deriving sexp]
-
-type operand =
-  | Imm of int
-  | Reg of reg
-  | Pseudo of string
-  | Stack of int
+type value =
+  | Constant of int
+  | Var of string
   [@@deriving sexp]
 
 type unary_operator =
-  | Neg
-  | Not
+  | Complement
+  | Negate
   [@@deriving sexp]
 
 type instruction =
-  | Mov of operand * operand
-  | Unary of unary_operator * operand
-  | AllocateStack of int
-  | Ret
+  | Unary of {
+      unary_op: unary_operator;
+      unary_src: value;
+      unary_dst: value;
+    }
+  | Return of value
   [@@deriving sexp]
 
 type function_definition =

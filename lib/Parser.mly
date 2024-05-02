@@ -6,6 +6,9 @@ open Ast
 %token LPAREN RPAREN
 %token LBRACE RBRACE
 %token SEMICOLON
+%token MINUS
+%token MINUSMINUS
+%token TILDE
 %token INT
 %token VOID
 %token RETURN
@@ -31,7 +34,18 @@ statement:
       { Return e }
   ;
 
+unop:
+  | MINUS
+      { Negate }
+  | TILDE
+      { Complement }
+  ;
+
 exp:
   | x = LITINT
       { Constant x }
+  | op = unop e = exp
+      { Unary (op, e) }
+  | LPAREN e = exp RPAREN
+      { e }
   ;

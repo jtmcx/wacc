@@ -1,7 +1,13 @@
 open Sexplib.Std
 
+type unary_operator =
+  | Complement
+  | Negate
+  [@@deriving sexp]
+
 type exp =
   | Constant of string
+  | Unary of unary_operator * exp
   [@@deriving sexp]
 
 type statement =
