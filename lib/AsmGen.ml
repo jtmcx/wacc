@@ -74,8 +74,8 @@ let emit_instruction out = function
       let dst = Asm.Reg Asm.AX in
       Queue.push (Asm.Mov (src, dst)) out;
       Queue.push Asm.Ret out
-  | Tacky.Unary {unary_op; unary_src; unary_dst} ->
-      emit_unary out unary_op unary_src unary_dst
+  | Tacky.Unary (op, src, dst) ->
+      emit_unary out op src dst
 
 let emit_body instructions =
   let out = Queue.create () in

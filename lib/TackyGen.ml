@@ -19,17 +19,13 @@ let rec emit_exp out = function
       emit_unary out op e
 
 and emit_unary out op e =
+  let op = match op with
+    | Ast.Complement -> Tacky.Complement
+    | Ast.Negate     -> Tacky.Negate
+  in
   let src = emit_exp out e in
   let dst = Tacky.Var (Context.fresh ()) in
-  let instr = Tacky.Unary
-    { unary_src = src;
-      unary_dst = dst;
-      unary_op = match op with
-        | Ast.Complement -> Tacky.Complement
-        | Ast.Negate     -> Tacky.Negate
-    }
-  in
-  Queue.push instr out; dst
+  Queue.push (Tacky.Unary (op, src, dst)) out; dst
 
 let emit_instructions (Ast.Return e) =
   let out = Queue.create () in

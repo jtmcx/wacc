@@ -11,11 +11,7 @@ type unary_operator =
   [@@deriving sexp]
 
 type instruction =
-  | Unary of {
-      unary_op: unary_operator;
-      unary_src: value;
-      unary_dst: value;
-    }
+  | Unary of unary_operator * value * value
   | Return of value
   [@@deriving sexp]
 
