@@ -8,12 +8,21 @@ open Ast
 %token SEMICOLON
 %token MINUS
 %token MINUSMINUS
+%token PLUS
+%token PLUSPLUS
+%token STAR
+%token SLASH
+%token PERCENT
 %token TILDE
 %token INT
 %token VOID
 %token RETURN
 %token <string> IDENT
 %token <string> LITINT
+
+%left PLUS MINUS                    /* lowest precedence */
+%left STAR SLASH PERCENT            /* medium precedence */
+%nonassoc UNARY_MINUS UNARY_NEGATE  /* highest precedence */
 
 %start <Ast.program> program
 
@@ -34,18 +43,23 @@ statement:
       { Return e }
   ;
 
-unop:
-  | MINUS
-      { Negate }
-  | TILDE
-      { Complement }
-  ;
-
 exp:
   | x = LITINT
       { Constant x }
-  | op = unop e = exp
-      { Unary (op, e) }
+  | MINUS e = exp %prec UNARY_MINUS
+      { Unary (Negate, e) }
+  | TILDE e = exp %prec UNARY_NEGATE
+      { Unary (Negate, e) }
+  | e1 = exp PLUS e2 = exp
+      { Binary (Add, e1, e2) }
+  | e1 = exp MINUS e2 = exp
+      { Binary (Subtract, e1, e2) }
+  | e1 = exp STAR e2 = exp
+      { Binary (Multiply, e1, e2) }
+  | e1 = exp SLASH e2 = exp
+      { Binary (Divide, e1, e2) }
+  | e1 = exp PERCENT e2 = exp
+      { Binary (Remainder, e1, e2) }
   | LPAREN e = exp RPAREN
       { e }
   ;

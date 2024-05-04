@@ -20,27 +20,27 @@ end
 
 
 (** Replace pseudo registers with stack allocated variables. *)
-let fixup_pseudos instrs =
+let replace_pseudos instrs =
   let frame = Frame.create () in
-  let fixup = function
+  let subst = function
     | Asm.Pseudo x -> Asm.Stack (Frame.lookup x frame)
     | op           -> op
   in
-  let fixup_instruction = function
-    | Asm.Mov (src, dst)  -> Asm.Mov (fixup src, fixup dst)
-    | Asm.Unary (op, dst) -> Asm.Unary (op, fixup dst)
-    | Asm.AllocateStack _ -> raise (Failure "Unexpected AllocateStack")
-    | Asm.Ret             -> Asm.Ret
+  let subst_instruction = function
+    | Asm.Mov (src, dst)        -> Asm.Mov (subst src, subst dst)
+    | Asm.Unary (op, dst)       -> Asm.Unary (op, subst dst)
+    | Asm.Binary (op, src, dst) -> Asm.Binary (op, subst src, subst dst)
+    | Asm.Cdq                   -> Asm.Cdq
+    | Asm.Idiv src              -> Asm.Idiv (subst src)
+    | Asm.Ret                   -> Asm.Ret
+    | Asm.AllocateStack _       -> raise (Failure "Unexpected AllocateStack")
   in
   (* Patch every pseudo variable with a stack offset. Prepend the entire
      instruction block with a single stack allocation for all variables. *)
-  Asm.AllocateStack (Frame.size frame) :: List.map fixup_instruction instrs
+  Asm.AllocateStack (Frame.size frame) :: List.map subst_instruction instrs
 
 
-(** [fixup_movs instrs] witll replace any instance of 'mov %m(%rbp)
-    %n(%rbp)' in [instrs] with two instructions: 'mov %m(%rbp) %r10d'
-    and 'mov %r10d %n(%rbp)'. *)
-let fixup_movs instrs =
+let fixup_instructions instrs =
   let open Asm in
   let out = Queue.create () in
   let push x = Queue.push x out in
@@ -48,34 +48,83 @@ let fixup_movs instrs =
     | Mov (Stack k1, Stack k2) ->
         push (Mov (Stack k1, Reg R10));
         push (Mov (Reg R10, Stack k2))
+    | Binary (op, Stack k1, Stack k2) ->
+        push (Mov (Stack k1, Reg R10));
+        push (Binary (op, Reg R10, Stack k2))
+    | Idiv (Imm x) ->
+        push (Mov (Imm x, Reg R10));
+        push (Idiv (Reg R10))
     | x -> push x
   in
   List.iter fixup_instruction instrs;
   List.of_seq (Queue.to_seq out)
 
 
+let convert_unop = function
+  | Tacky.Complement -> Asm.Not
+  | Tacky.Negate     -> Asm.Neg
+
+let convert_binop = function
+  | Tacky.Add      -> Asm.Add
+  | Tacky.Subtract -> Asm.Sub
+  | Tacky.Multiply -> Asm.Mult
+  | _              -> raise (Failure "TODO")
+
 let emit_value = function
   | Tacky.Constant x -> Asm.Imm x
   | Tacky.Var x      -> Asm.Pseudo x
 
-let emit_unary out op src dst =
-  let op' = match op with
-    | Tacky.Complement -> Asm.Not
-    | Tacky.Negate     -> Asm.Neg
-  in
+let emit_unary op src dst instructions =
+  let op'  = convert_unop op in
   let src' = emit_value src in
   let dst' = emit_value dst in
-  Queue.push (Asm.Mov (src', dst')) out;
-  Queue.push (Asm.Unary (op', dst')) out
+  Queue.push (Asm.Mov (src', dst')) instructions;
+  Queue.push (Asm.Unary (op', dst')) instructions
+
+let emit_binary op src1 src2 dst instructions =
+  let op'   = convert_binop op in
+  let src1' = emit_value src1 in
+  let src2' = emit_value src2 in
+  let dst'  = emit_value dst in
+  Queue.push (Asm.Mov (src1', dst')) instructions;
+  Queue.push (Asm.Binary (op', src2', dst')) instructions
+
+let emit_divide src1 src2 dst instructions =
+  let src1' = emit_value src1 in
+  let src2' = emit_value src2 in
+  let dst'  = emit_value dst in
+  Queue.push (Asm.Mov (src1', Asm.Reg Asm.AX)) instructions;
+  Queue.push Asm.Cdq instructions;
+  Queue.push (Asm.Idiv src2') instructions;
+  Queue.push (Asm.Mov (Asm.Reg Asm.AX, dst')) instructions
+
+let emit_remainder src1 src2 dst instructions =
+  let src1' = emit_value src1 in
+  let src2' = emit_value src2 in
+  let dst'  = emit_value dst in
+  Queue.push (Asm.Mov (src1', Asm.Reg Asm.AX)) instructions;
+  Queue.push Asm.Cdq instructions;
+  Queue.push (Asm.Idiv src2') instructions;
+  Queue.push (Asm.Mov (Asm.Reg Asm.DX, dst')) instructions
+
+let emit_return value instructions =
+  let src = emit_value value in
+  let dst = Asm.Reg Asm.AX in
+  Queue.push (Asm.Mov (src, dst)) instructions;
+  Queue.push Asm.Ret instructions
 
 let emit_instruction out = function
   | Tacky.Return x ->
-      let src = emit_value x in
-      let dst = Asm.Reg Asm.AX in
-      Queue.push (Asm.Mov (src, dst)) out;
-      Queue.push Asm.Ret out
+      emit_return x out
   | Tacky.Unary (op, src, dst) ->
-      emit_unary out op src dst
+      emit_unary op src dst out
+  | Tacky.Binary (Tacky.Divide, src1, src2, dst) ->
+      emit_divide src1 src2 dst out
+  | Tacky.Binary (Tacky.Remainder, src1, src2, dst) ->
+      emit_remainder src1 src2 dst out
+  | Tacky.Binary (op, src1, src2, dst) ->
+      emit_binary op src1 src2 dst out
+
 
 let emit_body instructions =
   let out = Queue.create () in
@@ -84,8 +133,8 @@ let emit_body instructions =
 
 let emit (Tacky.Program (Tacky.Function fn)) =
   let body = emit_body fn.fn_body in
-  let body = fixup_pseudos body in
-  let body = fixup_movs body in
+  let body = replace_pseudos body in
+  let body = fixup_instructions body in
   Asm.Program (Asm.Function {
     fn_name = fn.fn_name;
     fn_body = body

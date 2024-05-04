@@ -10,6 +10,11 @@ type token =
   | SEMICOLON
   | MINUS
   | MINUSMINUS
+  | PLUS
+  | PLUSPLUS
+  | STAR
+  | SLASH
+  | PERCENT
   | TILDE
   | INT
   | VOID
@@ -43,8 +48,13 @@ rule lex = parse
   | '{'                     { LBRACE }
   | '}'                     { RBRACE }
   | ';'                     { SEMICOLON }
+  | "++"                    { PLUSPLUS }
   | "--"                    { MINUSMINUS }
+  | '+'                     { PLUS }
   | '-'                     { MINUS }
+  | '*'                     { STAR }
+  | '/'                     { SLASH }
+  | '%'                     { PERCENT }
   | '~'                     { TILDE }
   | "int"                   { INT }
   | "void"                  { VOID }

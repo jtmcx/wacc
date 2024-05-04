@@ -2,7 +2,9 @@ open Sexplib.Std
 
 type reg =
   | AX
+  | DX
   | R10
+  | R11
   [@@deriving sexp]
 
 type operand =
@@ -17,9 +19,18 @@ type unary_operator =
   | Not
   [@@deriving sexp]
 
+type binary_operator =
+  | Add
+  | Sub
+  | Mult
+  [@@deriving sexp]
+
 type instruction =
   | Mov of operand * operand
   | Unary of unary_operator * operand
+  | Binary of binary_operator * operand * operand
+  | Idiv of operand
+  | Cdq
   | AllocateStack of int
   | Ret
   [@@deriving sexp]

@@ -10,8 +10,17 @@ type unary_operator =
   | Negate
   [@@deriving sexp]
 
+type binary_operator =
+  | Add
+  | Subtract
+  | Multiply
+  | Divide
+  | Remainder
+  [@@deriving sexp]
+
 type instruction =
   | Unary of unary_operator * value * value
+  | Binary of binary_operator * value * value * value
   | Return of value
   [@@deriving sexp]
 

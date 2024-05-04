@@ -5,9 +5,18 @@ type unary_operator =
   | Negate
   [@@deriving sexp]
 
+type binary_operator =
+  | Add
+  | Subtract
+  | Multiply
+  | Divide
+  | Remainder
+  [@@deriving sexp]
+
 type exp =
   | Constant of string
   | Unary of unary_operator * exp
+  | Binary of binary_operator * exp * exp
   [@@deriving sexp]
 
 type statement =
